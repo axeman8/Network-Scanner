@@ -3,25 +3,19 @@ from scapy.all import *
 import nmap
 
 def detect_service_version(target_ip, target_ports):
-    """
-    Detects services and their versions running on the specified target IP and ports.
-    Uses banner grabbing to extract version information.
-    """
     service_versions = {}
 
     for port in target_ports:
         try:
             sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-            sock.settimeout(2)  # Timeout in case the service doesn't respond
+            sock.settimeout(2)
             result = sock.connect_ex((target_ip, port))
 
-            if result == 0:  # Port is open
+            if result == 0:
                 try:
-                    # Send a basic request to get a response (banner grabbing)
                     sock.sendall(b"HEAD / HTTP/1.1\r\nHost: " + target_ip.encode() + b"\r\n\r\n")
                     response = sock.recv(1024).decode(errors='ignore')
 
-                    # Extract the first line from the response
                     banner = response.split("\n")[0]
                     service_versions[port] = banner.strip()
                 except:
@@ -35,14 +29,9 @@ def detect_service_version(target_ip, target_ports):
     return service_versions
 
 def advanced_service_detection(target_ip, target_ports):
-    """
-    Uses Nmap for advanced service and version detection.
-    Requires Nmap to be installed on the system.
-    """
     nm = nmap.PortScanner()
     service_versions = {}
 
-    # Scanning the target IP and ports using Nmap's version detection
     nm.scan(target_ip, ",".join(map(str, target_ports)), "-sV")
 
     for host in nm.all_hosts():
@@ -55,10 +44,9 @@ def advanced_service_detection(target_ip, target_ports):
 
     return service_versions
 
-# Example usage
 if __name__ == "__main__":
-    target_ip = "192.168.1.1"  # Change this to the target IP
-    target_ports = [21, 22, 25, 80, 443, 3306, 8080]  # Common ports
+    target_ip = "192.168.1.1"
+    target_ports = [21, 22, 25, 80, 443, 3306, 8080]
 
     print("\nRunning Basic Service Detection...\n")
     detected_services = detect_service_version(target_ip, target_ports)
