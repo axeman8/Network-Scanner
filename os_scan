@@ -1,0 +1,130 @@
+from scapy.all import *
+from scapy.layers.inet import IP, TCP, ICMP
+import ipaddress
+
+
+def get_ttl(ip):
+    """Send an ICMP request to get the TTL value from the response."""
+    try:
+        packet = IP(dst=ip) / ICMP()
+        response = sr1(packet, timeout=1, verbose=False)
+        if response:
+            return response.ttl
+    except Exception as e:
+        print(f"Error pinging {ip}: {e}")
+    return None
+
+def os_guess_from_ttl(ttl):
+    """Estimate OS based on TTL values."""
+    if ttl is None:
+        return "Unknown"
+    elif ttl <= 64:
+        return "Linux/Unix-based"
+    elif ttl <= 128:
+        return "Windows"
+    elif ttl <= 255:
+        return "Cisco/Networking Device"
+    else:
+        return "Unknown"
+
+def get_window_size(ip, port):
+    try:
+        # Sending a TCP SYN packet to port whatever
+        packet = IP(dst=ip) / TCP(dport=port, flags="S")
+        response = sr1(packet, timeout=2, verbose=False)
+
+        if response and response.haslayer(TCP):
+            return response[TCP].window  # Extract TCP Window Size
+
+    except Exception as e:
+        print(f"Error contacting {ip}: {e}")
+    
+    return None
+
+def os_guess_from_window(window):
+    """OS determined from TCP Window Size."""
+    if window is None:
+        return "Unknown"
+
+    """dict of signatures for known window sizes"""
+    os_signatures = {
+        8192: "Windows XP/2000/NT",
+        16384: "Windows 7/8/10",
+        65535: "Windows Server or High-Performance Windows",
+        5840: "Linux (2.4 - 3.x kernels)",
+        64240: "Linux (Modern 4.x kernels)",
+        14600: "FreeBSD/macOS",
+        32120: "MacOS X (Lion/Mountain Lion)",
+        4128: "Cisco Router/Networking Device",
+        8760: "Solaris 7/8/9",
+        32768: "OpenBSD",
+    }
+
+   
+    if window in os_signatures:
+        return f"Likely {os_signatures[window]}"
+
+    # Default case if no specific signature is found
+    if 8192 <= window <= 16384:
+        return "Possible Windows (XP - 10)"
+    elif 5840 <= window <= 64240:
+        return "Possible Linux-based OS"
+    elif 14600 <= window <= 32120:
+        return "Possible macOS/FreeBSD"
+    elif window <= 4128:
+        return "Possible Cisco/Solaris/Embedded Device"
+    
+    return "Unknown OS (Uncommon Window Size)"
+
+def scan_target(ip, port):
+    """Scan a single target IP for OS detection."""
+    print(f"\nScanning Host: {ip}")
+    ttl = get_ttl(ip)
+    os_guess = os_guess_from_ttl(ttl)
+    window = get_window_size(ip, port)
+    os_guess_window = os_guess_from_window(window)
+
+
+    print(f"  TTL: {ttl} → Guessed OS: {os_guess}")
+    print(f"  Window Size: {window} → Guessed OS: {os_guess_window}")
+    
+"""fix it to allow inputs from other file"""
+def get_ip_range():
+    """Get user input for IP address and port."""
+    ip_input = input("Enter an IP address or range (e.g., 192.168.1.1-192.168.1.100 or 8.8.8.8): ").strip()
+    port_input = input("Enter a port number (e.g., 80): ").strip()
+    if not port_input.isdigit():
+        print("Invalid port. Using default port 80.")
+        port_input = 80
+    elif int(port_input) < 1 or int(port_input) > 65535:
+        print("Invalid port. Using default port 80.")
+        port_input = 80
+    if '-' in ip_input:
+        # Handle IP range
+        start_ip, end_ip = ip_input.split('-')
+        try:
+            start_ip = ipaddress.IPv4Address(start_ip.strip())
+            end_ip = ipaddress.IPv4Address(end_ip.strip())
+            return [str(ip) for ip in range(int(start_ip), int(end_ip) + 1)], int(port_input)
+        except ipaddress.AddressValueError:
+            print("Invalid IP range format.")
+            return [], None
+    else:
+        # Single IP
+        try:
+            ip = ipaddress.IPv4Address(ip_input)
+            return [str(ip)], int(port_input)
+        except ipaddress.AddressValueError:
+            print("Invalid IP address.")
+            return [], None
+
+if __name__ == "__main__":
+    ip_list, port = get_ip_range()
+    
+    if not ip_list:
+        print("No valid IP to scan.")
+    else:
+        for ip in ip_list:
+            scan_target(ip, port)
+
+    print("\nScan complete!")
