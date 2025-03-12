@@ -1,0 +1,27 @@
+from scapy.all import IP, TCP, ICMP, sr1, sr
+
+def is_host_up(host, ports=[21, 22, 23, 25, 53, 80, 443, 8080, 3306, 3389, 445, 5900]):
+    """Check if host is up using TCP SYN and ICMP Echo Request."""
+    # ICMP Echo Request
+    icmp_pkt = IP(dst=host)/ICMP()
+    icmp_resp = sr1(icmp_pkt, timeout=1, verbose=False)
+    if icmp_resp is not None:
+        return True
+    
+    # TCP SYN Scan
+    for port in ports:
+        tcp_pkt = IP(dst=host)/TCP(dport=port, flags="S")
+        tcp_resp = sr1(tcp_pkt, timeout=1, verbose=False)
+        
+        if tcp_resp and tcp_resp.haslayer(TCP):
+            if tcp_resp[TCP].flags == 0x12:  # SYN-ACK response
+                return True
+    
+    return False
+
+if __name__ == "__main__":
+    host = input("Host: ")
+    if is_host_up(host):
+        print("Host is up")
+    else:
+        print("Host is down")
