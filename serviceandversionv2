@@ -1,0 +1,55 @@
+import socket
+from scapy.all import *
+from inputfile import ip_to_scan, port_to_scan, type_of_scan
+
+if type_of_scan == "SV":
+    
+    def detect_service_version(ip, target_ports):
+        service_versions = {}
+
+        for port in target_ports:
+            try:
+                sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+                sock.settimeout(2)
+                result = sock.connect_ex((ip, port))
+
+                if result == 0:
+                    try:
+                        sock.sendall(b"HEAD / HTTP/1.1\r\nHost: " + ip.encode() + b"\r\n\r\n")
+                        response = sock.recv(1024).decode(errors='ignore')
+
+                        banner = response.split("\n")[0]
+                        service_versions[port] = banner.strip()
+                    except:
+                        service_versions[port] = "Service detected but version unknown"
+
+                sock.close()
+            
+            except Exception as e:
+                service_versions[port] = f"Error: {str(e)}"
+
+        return service_versions
+
+    def get_ip_info():
+        """Get IP and port from input file."""
+        try:
+            ip = ip_to_scan.strip()
+            return ip
+        except Exception as e:
+            print(f"Error processing input: {e}")
+            return None
+
+    if __name__ == "__main__":
+        ip = get_ip_info()
+        if ip:
+            if port_to_scan == 80:
+                print('default port scan initiated, scanning ports: [21, 22, 25, 80, 443, 3306, 8080]')
+                target_ports = [21, 22, 25, 80, 443, 3306, 8080]
+            else:
+                target_ports = [port_to_scan]
+            
+            print("\nRunning Basic Service Detection...\n")
+            detected_services = detect_service_version(ip, target_ports)
+            for port, service in detected_services.items():
+                print(f"Port {port}: {service}")
+                
