@@ -44,7 +44,7 @@ def user_input():
                     port_to_scan = "default"
 
         else:
-            port_to_scan = 80  # Placeholder for MAP/UDP
+            port_to_scan = 80  #  for MAP/UDP
 
         
         scans = {
@@ -55,7 +55,7 @@ def user_input():
         }
 
         
-        cmd = ["python3", "masterfile.py", scans[scan_type], str(ip)] #endre navn på masterfile til hva enn vi velger å kalle dritten
+        cmd = ["sudo", "python3", "masterfile.py", scans[scan_type], str(ip)] #endre navn på masterfile til hva enn vi velger å kalle dritten. denne er forresten litt ugrei siden sudo lar deg kjøre faenskapen uten å be om passord (???)
         if scan_type in ["OS", "SV"]:
             cmd.append(str(port_to_scan))
 
