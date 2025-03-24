@@ -1,37 +1,70 @@
 import ipaddress
+import subprocess
 
-
-print("Welcome to Team10 Network Scanner")
-
-def user_input(ip_to_scan):
-    try:
-        ip = ipaddress.IPv4Address(ip_to_scan)
-    except ipaddress.AddressValueError:
-        print("Invalid IP address.")
-       
-    
-    type_of_scan = input('Enter the type of scan or help (SV, UDP, OS): ').strip().upper()
-
-    if type_of_scan == "HELP":
-        print("SV: Service and version scan, UDP: UDP scan, OS: OS scan")
-        type_of_scan = input('Enter the type of scan (SYN, UDP, OS): ').strip().upper()
-
-    port_to_scan = 80  # Default port
-
-    if type_of_scan == "OS" or type_of_scan == "SV":
-        port_to_scan = input("Enter the port to scan: ").strip()
+def user_input():
+    while True:
+        print("\nWelcome to Team10 Network Scanner\n enjoy the scan!")
+        ip_input = input("Enter the IP address to scan (or type 'exit' to quit): ").strip()
         
-        if not port_to_scan.isdigit():
-            print("Invalid port. Using default port 80.")
-            port_to_scan = 80
+        if ip_input.lower() == "exit":
+            print("we hope your scan met your expectations, goodbye!")
+            break
+
+        try:
+            ip = ipaddress.IPv4Address(ip_input)
+        except ipaddress.AddressValueError:
+            print("Invalid IP address. remember to use IPv4 format (1-255.1-255.1-255.1-255).")
+            continue
+
+        scan_type = input('Enter the type of scan (SV, UDP, OS, MAP) or help (or type exit if you want to quit) : ').strip().upper()
+
+        if scan_type == "HELP":
+            print("\n Available Scan Types:")
+            print("  SV :  Service and version scan")
+            print("  UDP : UDP scan (not yet implemented)")
+            print("  OS  : OS detection scan")
+            print("  MAP : Host discovery (ping & SYN)")
+            continue  # Return to top of loop
+
+        if scan_type not in ["SV", "UDP", "OS", "MAP"]:
+            print(" Unknown scan type. Type 'help' to see options.")
+            continue
+
+        port_to_scan = 80  # Default port
+
+        if scan_type in ["OS", "SV"]:
+            port_input = input("Enter the port to scan (default 80 for OS scan): ").strip()
+
+            if not port_input.isdigit():
+                print("Invalid port. Using default port.")
+            else:
+                port_to_scan = int(port_input)
+                if port_to_scan < 1 or port_to_scan > 65535:
+                    print("Port out of range. Using default port.")
+                    port_to_scan = "default"
+
         else:
-            port_to_scan = int(port_to_scan)
-            if port_to_scan < 1 or port_to_scan > 65535:
-                print("Invalid port. Using default port 80.")
-                port_to_scan = 80
+            port_to_scan = 80  # Placeholder for MAP/UDP
 
-    return str(ip), port_to_scan, type_of_scan
+        
+        scans = {
+            "OS": "os",
+            "SV": "sv",
+            "MAP": "map",
+            "UDP": "udp"
+        }
 
-ip_to_scan, port_to_scan, type_of_scan = user_input(input("Enter the IP address to scan: "))
+        
+        cmd = ["python3", "masterfile.py", scans[scan_type], str(ip)] #endre navn på masterfile til hva enn vi velger å kalle dritten
+        if scan_type in ["OS", "SV"]:
+            cmd.append(str(port_to_scan))
 
-#print(results)
+        print("\nLaunching scan.\n")
+        result = subprocess.run(cmd, capture_output=True, text=True)
+        print(result.stdout)
+
+        input("\nPress Enter to return to the main menu.")
+
+
+if __name__ == "__main__":
+    user_input()
