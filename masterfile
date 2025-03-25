@@ -1,26 +1,6 @@
-"""
-A network scanning and reconnaissance tool with multiple scanning capabilities.
-
-This script provides three primary scanning modes:
-- Host mapping (network connectivity check)
-- OS detection using TTL and window size
-- Service version detection on specified ports
-
-Scan types:
-- 'map': Check if a host is reachable
-- 'os': Estimate operating system based on network characteristics
-- 'sv': Detect service versions running on specified ports
-
-Usage:
-    python3 scanner.py <scan_type> <ip> [<port>]
-
-Example:
-    python3 scanner.py map 192.168.1.1
-    python3 scanner.py os 192.168.1.1
-    python3 scanner.py sv 192.168.1.1 80
-"""
 import sys
 import socket
+from concurrent.futures import ThreadPoolExecutor
 from scapy.all import *
 from scapy.layers.inet import IP, TCP, ICMP
 
@@ -49,6 +29,29 @@ def check_host(ip):
     else:
         return f"{ip} is down"
 #end of classic map
+
+def scanports(ip, port, open_ports):
+    try:
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex((ip, port))
+        if result == 0:
+            open_ports.append(port)
+        sock.close()
+    except Exception as e:
+        return f"Error scanning port {port} on {ip}: {e}"
+
+def portscan(ip, ports=range(1, 65535)):
+    open_ports = []
+    
+    with ThreadPoolExecutor(max_workers=200) as executr:
+        for port in ports:
+            executr.submit(scanports, ip, port, open_ports)
+
+    if open_ports:
+        return f"Open ports on {ip}: {sorted(open_ports)}"
+    else:
+        return f"No open ports found on {ip}."
 
 #OS detection
 def get_ttl(ip):
@@ -174,6 +177,10 @@ if __name__ == "__main__":
         services = detect_service_version(ip, target_ports)
         for p, svc in services.items():
             print(f"Port {p}: {svc}")
+    
+    elif scan_type == "port":
+        print(portscan(ip))
+
 
     else:
-        print("Unknown scan type. Use one of: map, os, sv.")
+        print("Unknown scan type. Use one of: map, os, sv. port")
