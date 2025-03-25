@@ -16,17 +16,17 @@ def user_input():
             print("Invalid IP address. remember to use IPv4 format (1-255.1-255.1-255.1-255).")
             continue
 
-        scan_type = input('Enter the type of scan (SV, UDP, OS, MAP) or help (or type exit if you want to quit) : ').strip().upper()
+        scan_type = input('Enter the type of scan (SV, PORT, OS, MAP) or help (or type exit if you want to quit) : ').strip().upper()
 
         if scan_type == "HELP":
             print("\n Available Scan Types:")
             print("  SV :  Service and version scan")
-            print("  UDP : UDP scan (not yet implemented)")
+            print("  PORT : Port scan ")
             print("  OS  : OS detection scan")
             print("  MAP : Host discovery (ping & SYN)")
             continue  # Return to top of loop
 
-        if scan_type not in ["SV", "UDP", "OS", "MAP"]:
+        if scan_type not in ["SV", "PORT", "OS", "MAP"]:
             print(" Unknown scan type. Type 'help' to see options.")
             continue
 
@@ -36,30 +36,30 @@ def user_input():
             port_input = input("Enter the port to scan (default 80 for OS scan): ").strip()
 
             if not port_input.isdigit():
-                print("Invalid port. Using default port.")
+                print("Invalid port. Using default port (80).")
             else:
                 port_to_scan = int(port_input)
                 if port_to_scan < 1 or port_to_scan > 65535:
-                    print("Port out of range. Using default port.")
-                    port_to_scan = "default"
+                    print("Port out of range. Using default port(80).")
+                    port_to_scan = 80
 
         else:
-            port_to_scan = 80  #  for MAP/UDP
+            port_to_scan = 80  # Placeholder for MAP
 
         
         scans = {
             "OS": "os",
             "SV": "sv",
             "MAP": "map",
-            "UDP": "udp"
+            "PORT": "port"
         }
 
         
-        cmd = ["sudo", "python3", "masterfile.py", scans[scan_type], str(ip)] #endre navn på masterfile til hva enn vi velger å kalle dritten. denne er forresten litt ugrei siden sudo lar deg kjøre faenskapen uten å be om passord (???)
+        cmd = ["sudo", "python3", "masterfile.py", scans[scan_type], str(ip)]
         if scan_type in ["OS", "SV"]:
             cmd.append(str(port_to_scan))
 
-        print("\nLaunching scan.\n")
+        print("\nLaunching scan.\nPORT might take a while, please wait")
         result = subprocess.run(cmd, capture_output=True, text=True)
         print(result.stdout)
 
