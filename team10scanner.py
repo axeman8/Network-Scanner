@@ -1,9 +1,11 @@
 import sys
 import socket
-from concurrent.futures import ThreadPoolExecutor
+import asyncio
 from scapy.layers.inet import IP, TCP, ICMP, sr1
+import time
 
 results = ""
+
 
 #classic map
 def is_host_up(host, ports=[21, 22, 23, 25, 53, 80, 443, 8080, 3306, 3389, 445, 5900]):
@@ -14,7 +16,7 @@ def is_host_up(host, ports=[21, 22, 23, 25, 53, 80, 443, 8080, 3306, 3389, 445, 
 
     for port in ports:
         tcp_pkt = IP(dst=host) / TCP(dport=port, flags="S")
-        tcp_resp = sr1(tcp_pkt, timeout=1, verbose=False)
+        tcp_resp = sr1(tcp_pkt, timeout=2, verbose=False)
         if tcp_resp and tcp_resp.haslayer(TCP):
             if tcp_resp[TCP].flags == 0x12:
                 return True
@@ -30,35 +32,39 @@ def check_host(ip):
 #end of classic map
 
 #port scanning
-def scanports(ip, port, open_ports):
+async def scan_port(ip, port, open_ports, semaphore):
     try:
-        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        sock.settimeout(1)
-        result = sock.connect_ex((ip, port))
-        if result == 0:
+        async with semaphore:
+            conn = asyncio.open_connection(ip, port)
+            reader, writer = await asyncio.wait_for(conn, timeout=1)
             open_ports.append(port)
-        sock.close()
-    except Exception as e:
-        return f"Error scanning port {port} on {ip}: {e}"
+            writer.close()
+            await writer.wait_closed()
+    except:
+        pass
+
+async def async_portscan(ip, ports=range(1, 65535), max_concurrent=1000):
+    open_ports = []
+    semaphore = asyncio.Semaphore(max_concurrent)
+    tasks = [scan_port(ip, port, open_ports, semaphore) for port in ports]
+    await asyncio.gather(*tasks)
+    return open_ports
 
 def portscan(ip, ports=range(1, 65535)):
-    open_ports = []
-        
-    with ThreadPoolExecutor(max_workers=200) as executr:
-        for port in ports:
-            executr.submit(scanports, ip, port, open_ports)
-
+    open_ports = asyncio.run(async_portscan(ip, ports))
     if open_ports:
         return f"Open ports on {ip}: {sorted(open_ports)}"
     else:
         return f"No open ports found on {ip}."
 
-#OS detection
+
+    #OS detection
+
 def get_ttl(ip):
     # Send a ping packet to the target IP address
     try:
         pkt = IP(dst=ip) / ICMP()
-        resp = sr1(pkt, timeout=1, verbose=False)
+        resp = sr1(pkt, timeout=2, verbose=False)
         if resp and resp.haslayer(IP):
             return resp[IP].ttl
     except Exception as e:
@@ -70,12 +76,20 @@ def estimated_os_from_ttl(ttl):
     # Map TTL values to OS signatures, possible vulnerability is if number of hops is large ttl might slip into other OS ttl
     if ttl is None:
         return "Unknown"
+    elif ttl <= 32:
+        return "Windows 98"
+    elif ttl <= 60:
+        return "Stratus STCP"
     elif ttl <= 64:
-        return "Linux/Unix-based"
+        return "several possible matches with TTL of 64 or less: Compa Tru64 v5.0, Foundry, FreeBSD 5, juniper systems, Linux 2.0.x kernel, Linux Red Hat 9, MacOS/MacTCP X (10.5.6), Netgear FVG318"
     elif ttl <= 128:
-        return "Windows"
-    elif ttl <= 255:
+        return "Windows 98, 98 SE, Windows NT 4 WRKS SP 3 or SP 6a, Windows NT 4 Server SP4, Windows ME, Windows 2000 pro, Windows 2000 family, Windows XP, Windows Vista, Windows 7, Windows Server 2008, Windows 10"
+    elif ttl <= 200:
+        return "MPE/IX (HP)"
+    elif ttl <= 254:
         return "Cisco/Networking Device"
+    elif ttl <= 255:
+        return "AIX 3.2 and 4.1, BSDI BSD/OS 3.1 and 4.0, FreeBSD 3.4 and 4.0, HP-UX 10.2, HP-UX 11, Irix 6.5.3 and 6.5.8, Linux 2.2.14 kernel, Linux 2.4 kernel, NetBSD, OpenBSD 2.6 and 2.7, OpenVMS 07.01.2002, Solaris 2.5.1 and 2.6 and 2.7 and 2.8, Stratus TCP_OS, SunOS 5.7, Ultrix V4.2 – 4.5"
     else:
         return "Unknown"
 
@@ -83,7 +97,7 @@ def estimated_os_from_ttl(ttl):
 def get_window_size(ip, port):
     try:
         pkt = IP(dst=ip) / TCP(dport=port, flags="S")
-        rsp = sr1(pkt, timeout=2, verbose=False)
+        rsp = sr1(pkt, timeout=5, verbose=False)
         if rsp and rsp.haslayer(TCP):
             return rsp[TCP].window
     except Exception as e:
@@ -193,6 +207,7 @@ if __name__ == "__main__":
     elif scan_type == "os":
         ttl = get_ttl(ip)
         estimated_os = estimated_os_from_ttl(ttl)
+        print('Accurately estimating OS based on solely on ttl requires\nknowledge of the number of hops between scanner and target. ')
         window = get_window_size(ip, port)
         windowsize_os_estimate = estimated_os_from_window(window)
 
@@ -214,7 +229,10 @@ if __name__ == "__main__":
 
     
     elif scan_type == "port":
+        starttime = time.time()
         print(portscan(ip))
+        endtime = time.time()
+        print("Scanning took", endtime - starttime, "seconds")
 
 
     else:
