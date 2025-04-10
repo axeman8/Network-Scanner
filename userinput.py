@@ -5,7 +5,7 @@ import time
 def user_input():
     while True:
         print("\nWelcome to Team10 Network Scanner\n enjoy the scan!")
-        time.sleep(1)
+        time.sleep(0.1)
         ip_input = input("Enter the IP address to scan (or type 'exit' to quit): ").strip()
         
         if ip_input.lower() == "exit":
@@ -85,6 +85,7 @@ def user_input():
 
         print("\nLaunching scan.\n")
         result = subprocess.run(cmd, capture_output=True, text=True)
+        
         print(result.stdout)
         if result.stderr:
             print("Error:", result.stderr)
