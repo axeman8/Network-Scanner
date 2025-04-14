@@ -18,14 +18,14 @@ def user_input():
             print("Invalid IP address. remember to use IPv4 format (1-255.1-255.1-255.1-255).")
             continue
 
-        scan_type = input('Enter the type of scan (SV, PORT, OS, MAP) or help (or type exit if you want to quit) : ').strip().upper()
+        scan_type = input('Enter the type of scan (SV, PORT, OS, MAP) or HELP (or type exit if you want to quit) : ').strip()
 
         if scan_type == "HELP":
             print("\n Available Scan Types:")
-            print("  SV :  Service and version scan")
+            print("  SV   : Service and version scan")
             print("  PORT : Port scan ")
-            print("  OS  : OS detection scan")
-            print("  MAP : Host discovery (ping & SYN)")
+            print("  OS   : OS detection scan")
+            print("  MAP  : Host discovery (ping & SYN)")
             continue  
 
         if scan_type not in ["SV", "PORT", "OS", "MAP"]:
@@ -63,19 +63,11 @@ def user_input():
                 port_to_scan = 80
             else:
                 port_to_scan = valid_ports
-        else:
-            port_to_scan = 80  # Placeholder for MAP
+        #else:
+        #    port_to_scan = 80  # Placeholder for MAP
 
         
-        scans = {
-            "OS": "os",
-            "SV": "sv",
-            "MAP": "map",
-            "PORT": "port"
-        }
-
-        
-        cmd = ["sudo", "python3", "team10scanner.py", scans[scan_type], str(ip)]
+        cmd = ["sudo", "python3", "team10scanner.py", scan_type, str(ip)]
         if scan_type in ["OS", "SV"]:
             if isinstance(port_to_scan, list):
                 port_str = ",".join(str(p) for p in port_to_scan)
