@@ -1,0 +1,27 @@
+The script acts as a front end for "team10scanner.py", making it accessible through a simple text-based interface while handling input validation and command construction. 
+It is the user interaction layer that collects input parameters and passes them to the actual scanning functionality.
+
+The userinput.py script uses the following Libraries:
+"ipaddress", this is used for validating IPv4 addresses entered by the user.
+"subprocess", this is used to execute the actual scanning script (team10scanner.py) as a separate process.
+"time", this library us used for adding a small delay when starting the scipt for a better user experience.
+
+Functionality breakdown of the userinput.py
+
+The script runs in a main interface loop, which allows it to run continuously until the user types 'exit' in one of the input prompts.
+the scripts prompts the user to enter an IPv4 address to scan, the submitted address is validated by the "ipaddress" module. 
+should the address prove to be invalid, the spript will provide an  error feedback.
+
+after a valid address has been entered, the program offers four different types of network scans:
+SV: Service and version scan, PORT: Port scan, OS: OS detection scan, MAP: Host discovery (ping & SYN)
+Includes a help option that displays available scan types.
+as OS and SV scan requires a valid port to scan, the scanner will prompt the user to input a single port for OS scan, and if SV scan is selected, 
+the user can input a single port or a list of ports separated by a single comma. 
+The scanner will accept any port between 1 and 65535. If no valid port is given to the OS scan, the scanner will default to port 80.
+
+the userinput.py does not scan the target, it constructs a command to execute team10scanner.py with appropriate parameters:
+the first part of the command is "sudo", this is done to to run the scanner with elevated privileges as the creation of ICMP packets requires root privileges. 
+The next part of the command is python3 telling the command line to run the scanner as a python program, next us "team10scanner.py, 
+this is to start the actual scanner.next the validated IP address, the scan type and the port number are passed as arguments to the scannerplays the output from the scan
+
+once the scanner has completed it's scan, the user will again be prompted with which scan to conduct, or exit to end the scanner
