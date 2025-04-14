@@ -43,9 +43,9 @@ async def scan_port(ip, port, open_ports, semaphore):
     except:
         pass
 
-async def async_portscan(ip, ports=range(1, 65535), max_concurrent=1000):
+async def async_portscan(ip, ports=range(1, 65535), max_concurr=1000):
     open_ports = []
-    semaphore = asyncio.Semaphore(max_concurrent)
+    semaphore = asyncio.Semaphore(max_concurr)
     tasks = [scan_port(ip, port, open_ports, semaphore) for port in ports]
     await asyncio.gather(*tasks)
     return open_ports
@@ -141,16 +141,16 @@ def estimated_os_from_window(window):
 def detect_service_version(ip, target_ports):
     versions = {}
 
-    # Mapping of ports to protocol-specific probe messages
+   
     probes = {
-        22: b"\r\n",  # SSH sends a banner
-        25: b"EHLO example.com\r\n",  # SMTP
-        80: b"HEAD / HTTP/1.1\r\nHost: example.com\r\n\r\n",  # HTTP
-        443: b"",  # HTTPS needs TLS handshake; skipping banner
-        3306: b"\x00",  # MySQL sends a handshake first — doesn't send a banner
-        110: b"QUIT\r\n",  # POP3
-        143: b"LOGOUT\r\n",  # IMAP
-        21: b"QUIT\r\n",  # FTP
+        22: b"\r\n",  
+        25: b"EHLO generic-address.com\r\n",  
+        80: b"HEAD / HTTP/1.1\r\nHost: generic-address.com\r\n\r\n",  #HTTP
+        443: b"",  #HTTPS 
+        3306: b"\x00",  #MySQL 
+        110: b"QUIT\r\n",  #POP3
+        143: b"LOGOUT\r\n",  #IMAP
+        21: b"QUIT\r\n",  #FTP
     }
 
     for port in target_ports:
@@ -160,7 +160,7 @@ def detect_service_version(ip, target_ports):
             result = sock.connect_ex((ip, port))
 
             if result == 0:
-                # Send protocol-specific probe
+                #Send protocol-specific probe
                 try:
                     probe = probes.get(port, b"\r\n")
                     if probe:
@@ -185,10 +185,9 @@ def detect_service_version(ip, target_ports):
 
 #end of service version detection
 
-# Entry point
 if __name__ == "__main__":
     if len(sys.argv) < 3:
-        print("Usage: python3 scanner.py <scan_type> <ip> [<port>]")
+        print("Usage: python3 team10scanner.py <scan_type> <ip> [<port>]")
         sys.exit(1)
 
     scan_type = sys.argv[1].lower()
