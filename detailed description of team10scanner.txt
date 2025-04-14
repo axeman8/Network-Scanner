@@ -1,0 +1,102 @@
+
+Detailed description of team10scanner.py
+
+team10scanner.py is a network scanning tool with multiple functionalities.
+The scanner is designed to be a versatile network reconnaissance tool with multiple scanning capabilities similar to tools like Nmap, but implemented in Python.
+The scanner is built with several libraries in order to function as an effective network scanner. 
+The following libraries are needed for the scanner to function in an efficient way: 
+"sys" provides access to Python interpreter variables and functions, used here for command-line arguments handling.
+"socket" enables low-level network interface access, the scanner uses "socket" for creating TCP connections to scan ports and detect service versions.
+"asyncio" implements asynchronous input and output,the scanner uses "asyncio" for concurrent port scanning to improve performance, 
+allowing the scanner to run simultaneous scans, significantly reducing the time spent to scan all ports.
+Several individual parts of the "scapy" library is used, the scanner uses "IP", "TCMP", "ICMP" and "sr1" from "scapy.layers.inet", 
+all of these are used for packet manipulation. "IP" creates IP packets, "TCP" creates TCP packets, "ICMP" creates ICMP or "ping" packets, 
+and "sr1" is a "Send and receive one" function that sends a packet and returns the first response.
+"time" is used for measuring the execution time of operations when doing port scans.
+
+Main Functionalities of the scanner
+
+host discovery
+
+Host Discovery or Map is used to determine if a host is up, i.e. it can be connected to.
+in the script, the function is named "is_host_up", the function requires an ip address (host), and uses a static list of ports. 
+initially the function tries ICMP ping with a waiting time of one seconds to check if host is up, verbose is set to false to avoid printing a detailed response. 
+If the host responds, the function returns True. 
+If ping for some reason doesn't work, it will try connecting to common ports. this is achieved by sending a TCP SYN packet (the start of a connection) to each port. 
+after sending the TCP SYN packet the scanner will wait for up to two seconds. If any port responds with a SYN-ACK (code 0x12), the host is up.
+The function will return True if host responds on any ports.
+The next fuction "check_host(ip)" is a simple wrapper function that calls "is_host_up" and formats the result based on the True or False set by "is_host_up"
+
+
+Port Scanning
+
+port scan can be a time-consuming process, in order to probe all ports 65535 individual packets are sent. 
+to accomplish this in a short time, the scanner uses the "asyncio" library. 
+"asyncio" lets python do multiple operations simultaneously and is used in the function to increase the number of ports scanned within a short time frame.
+
+The function "async def scan_port(ip, port, open_ports, semaphore)" tries to connect to a single port on the target IP address, 
+if it can connect to the port within one second, that port will be added to the  open_ports list.
+If the scanner is unable to connect, it just moves on to the next port with the "except: pass".
+The semaphore limits the number of simultaneous connections. 
+
+the next function in the port scanner is the "async def async_portscan(ip, ports=range(1, 65535), max_concurrent=1000)".
+This function scans multiple ports at once, limited by the max_concurr=1000 by default, it checks all possible ports (1-65535). 
+For each port it will create a list of tasks
+It creates a list of tasks using the previous function (one for each port), it will the wait using "await" until all port 
+scanning tasks are complete before returning a list of all open ports found.  
+
+the final part of the port scanning is the "portscan(ip, ports=range(1, 65535))" function which is a
+Wrapper function that runs the async port scanner, and formats and returns the results.
+
+OS Detection
+
+This code tries to figure out what operating system a target computer is running by looking at certain network characteristics. 
+It is comprised by two parts, one for OS detection using Time To Live, and one for OS detection using window size. 
+The first function, "get_ttl(ip)", will send a ICMP packet to target and retrieves the TTL (Time To Live) value in the response. 
+Verbose is set to false to discard other information and focus solely on the ttl value. If a ttl value is retrieved from the response, 
+the next function "estimated_os_from_ttl(ttl) will map the value to OS signature TTL values.
+this functionality does however have it's weaknesses as returned ttl value will be reduced if distance from target to scanner is greater 
+than the interval in which the scanner will identify an Operating system as one thing or the other. Knowledge of the target's 
+position is of importance when using ttl as a method of identifying target OS. 
+
+The next function, "get_window_size(ip, port)", sends TCP SYN packet and retrieves the TCP window size. 
+it will send a crafted packet using the "IP", "TCP" and "rs1" from "scapy", it will then check if a 
+response was returned and if that response has a TCP layer, it will retun the TCP window. 
+The returned window sized is passed to the function "estimated_os_from_window(window)" where it is mapped against potential operating systems. 
+The function will first check if there is an exact match, and if no exact match is found it will use different window size ranges for different operating systems. 
+
+
+Service Version Detection
+
+this part of the program contains a single function "detect_service_version(ip, target_ports)". The function requires an IP address, and ports to check. 
+the function will attempt to connect to specified ports, and send protocol-specific probes to elicit service banners. 
+Common ports are mapped to appropriate probe messages. 
+the function will create a socket object for network communication, and has a timeout of two seconds to avoid waiting for slow responses. 
+the scanner will try to connect with the specified IP and port and will return 0 if successful, and an error code unsuccessful.
+connect_ex() is used instead of connect() because it returns an error code rather than raising an exception.
+If the result is 0, it gets the appropriate probe message for that port or defaults to \r\n. 
+sock.sendall(probe) sends the entire message to the target service.
+the response sock.recv(1024) reads up to 1024 bytes from the socket,.decode(errors='ignore') converts the bytes to a string, 
+ignoring any characters that can't be decoded and .strip() removes any leading/trailing whitespace, is stored in the "banner" variable.
+If a banner was received, the scanner will store the first line which often contains version info in a "versions" dictionary. 
+If no banner was received, it notes that the port is open but no banner was obtained.
+
+
+
+
+Main Entry Point
+The script's main block:
+
+The scanner can be run from both command line, and the userinput.py file.
+This is done in the first part of the main block by using the "sys" library. 
+The first part of the main block checks if the script is being run directly. then it verifies that at least three command-line arguments are provided.
+if anything less than three arguments are provided, it will print an instruction of how to run the scanner from command line. in this case, 
+the first argument is the scanner itself.
+The scanner extracts the scan type from the second argument and converts it to lowercase, IP address is extracted from the third argument. 
+If the user intends to do a OS scan or a SV scan, there are four arguments, the scanner will treat the fourth as ports and the optional port argument in three ways:
+If no port is specified it defaults to port 80, if a single port is specified it converts it to an integer, 
+if a comma-separated list of ports is provided it will be converted to a list of integers.
+the remainder of the main block is handling of the individual options of the scanner, i.e what function to run and how to run them based on user input.
+
+
+
