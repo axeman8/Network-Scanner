@@ -4,7 +4,7 @@ import time
 
 def user_input():
     while True:
-        print("\nWelcome to Team10 Network Scanner\n enjoy the scan!")
+        print("\nWelcome to Team10 Network Scanner\nEnjoy the scan!")
         time.sleep(0.1)
         ip_input = input("Enter the IP address to scan (or type 'exit' to quit): ").strip()
         
@@ -18,17 +18,19 @@ def user_input():
             print("Invalid IP address. remember to use IPv4 format (1-255.1-255.1-255.1-255).")
             continue
 
-        scan_type = input('Enter the type of scan (SV, PORT, OS, MAP) or HELP (or type exit if you want to quit) : ').strip()
+        scan_type = input('Enter the type of scan (MAP, PORT, SV, OS, FULL) or HELP (or type exit if you want to quit) : ').strip().upper()
 
         if scan_type == "HELP":
             print("\n Available Scan Types:")
-            print("  SV   : Service and version scan")
-            print("  PORT : Port scan ")
-            print("  OS   : OS detection scan")
             print("  MAP  : Host discovery (ping & SYN)")
+            print("  PORT : Port scan ")
+            print("  SV   : Service and version scan")
+            print("  OS   : OS detection scan")
+            print("  FULL : All modes, scanner will run scan on all ports, SV will run on all open ports, OS will run on first open port")
+            
             continue  
 
-        if scan_type not in ["SV", "PORT", "OS", "MAP"]:
+        if scan_type not in ["SV", "PORT", "OS", "MAP", "FULL"]:
             print(" Unknown scan type. Type 'help' to see options.")
             continue
 
@@ -63,9 +65,7 @@ def user_input():
                 port_to_scan = 80
             else:
                 port_to_scan = valid_ports
-        #else:
-        #    port_to_scan = 80  # Placeholder for MAP
-
+       
         
         cmd = ["sudo", "python3", "team10scanner.py", scan_type, str(ip)]
         if scan_type in ["OS", "SV"]:
