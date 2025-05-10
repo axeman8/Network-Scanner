@@ -6,7 +6,7 @@ def user_input():
     while True:
         print("\nWelcome to Team10 Network Scanner\nEnjoy the scan!")
         time.sleep(0.5)
-        print("Remember that scanning a target may seem harmless, but can be intrusive. \nRemember to seek prior authorisation when conducting scans \nwith the Team10scanner.")
+        print("Remember that scanning a target may seem harmless, but can be intrusive. \nRemember to seek prior authorisation when conducting scans \nwith the Team10scanner.\In order for the scanner to run you need to make sure that\n socket, scapy, sys, and asyncio are installed.")
         time.sleep(0.5)
         ip_input = input("Enter the IP address to scan (or type 'exit' to quit): ").strip()
         
