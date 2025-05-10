@@ -5,7 +5,9 @@ import time
 def user_input():
     while True:
         print("\nWelcome to Team10 Network Scanner\nEnjoy the scan!")
-        time.sleep(0.1)
+        time.sleep(0.5)
+        print("Remember that scanning a target may seem harmless, but can be intrusive. \nRemember to seek prior authorisation when conducting scans \nwith the Team10scanner.")
+        time.sleep(0.5)
         ip_input = input("Enter the IP address to scan (or type 'exit' to quit): ").strip()
         
         if ip_input.lower() == "exit":
@@ -22,11 +24,12 @@ def user_input():
 
         if scan_type == "HELP":
             print("\n Available Scan Types:")
-            print("  MAP  : Host discovery (ping & SYN)")
-            print("  PORT : Port scan ")
-            print("  SV   : Service and version scan")
-            print("  OS   : OS detection scan")
+            print("  MAP  : Host discovery (ping & SYN), this will see if a target is online")
+            print("  PORT : Port scan, this scan will look for open ports on the target device. It will scan through all 65535 ports ")
+            print("  SV   : Service and version scan, this scan will probe the ports you enter, either a single port or a list. The scanner will try to determine which service and version is running on the port")
+            print("  OS   : OS detection scan, this scan will try to determine what operating system is installed on the target. The scanner will look at the TTL (time to live) and the window size of the TCP header")
             print("  FULL : All modes, scanner will run scan on all ports, SV will run on all open ports, OS will run on first open port")
+            print("  HELP : Typing \"help\" got you here, and will do so the next time as well")
             
             continue  
 
@@ -46,7 +49,7 @@ def user_input():
             else:
                 print("Invalid port. Using default port (80).")
         if scan_type == "SV":
-            port_input = input("Enter the ports to scan (comma-separated, e.g. 80,443,8080): ").strip()
+            port_input = input("Enter the ports to scan (comma-separated, 80,443,8080): ").strip()
             ports = port_input.split(',')
             valid_ports = []
             
@@ -65,7 +68,7 @@ def user_input():
                 port_to_scan = 80
             else:
                 port_to_scan = valid_ports
-       
+    
         
         cmd = ["sudo", "python3", "team10scanner.py", scan_type, str(ip)]
         if scan_type in ["OS", "SV"]:
