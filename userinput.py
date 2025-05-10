@@ -4,9 +4,9 @@ import time
 
 def user_input():
     while True:
-        print("\nWelcome to Team10 Network Scanner\nEnjoy the scan!")
+        print("\nWelcome to Piñata Network Scanner\nEnjoy the scan!")
         time.sleep(0.5)
-        print("Remember that scanning a target may seem harmless, but can be intrusive. \nRemember to seek prior authorisation when conducting scans \nwith the Team10scanner.\In order for the scanner to run you need to make sure that\n socket, scapy, sys, and asyncio are installed.")
+        print("Remember that scanning a target may seem harmless, but can be intrusive. \nRemember to seek prior authorisation when conducting scans \nwith Piñata.\In order for the scanner to run you need to make sure that\n socket, scapy, sys, and asyncio are installed.")
         print("To install the necessary libraries, exit the scanner and type \"pip install \[whatever library you're missing\]\" in the command line interface")
         time.sleep(0.5)
         ip_input = input("Enter the IP address to scan (or type 'exit' to quit): ").strip()
@@ -71,7 +71,7 @@ def user_input():
                 port_to_scan = valid_ports
     
         
-        cmd = ["sudo", "python3", "team10scanner.py", scan_type, str(ip)]
+        cmd = ["sudo", "python3", "pinata.py", scan_type, str(ip)]
         if scan_type in ["OS", "SV"]:
             if isinstance(port_to_scan, list):
                 port_str = ",".join(str(p) for p in port_to_scan)
