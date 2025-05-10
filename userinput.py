@@ -5,10 +5,10 @@ import time
 def user_input():
     while True:
         print("\nWelcome to Piñata Network Scanner\nEnjoy the scan!")
-        time.sleep(0.5)
-        print("Remember that scanning a target may seem harmless, but can be intrusive. \nRemember to seek prior authorisation when conducting scans \nwith Piñata.\In order for the scanner to run you need to make sure that\n socket, scapy, sys, and asyncio are installed.")
-        print("To install the necessary libraries, exit the scanner and type \"pip install \[whatever library you're missing\]\" in the command line interface")
-        time.sleep(0.5)
+        time.sleep(1)
+        print("Remember that scanning a target may seem harmless, but can be intrusive. \nRemember to seek prior authorisation when conducting scans \nwith Piñata.\nIn order for the scanner to run you need to make sure that\n socket, scapy, sys, and asyncio are installed.")
+        print("To install the necessary libraries, exit the scanner and type \"pip install [whatever library you're missing]\" in the command line interface")
+        time.sleep(1)
         ip_input = input("Enter the IP address to scan (or type 'exit' to quit): ").strip()
         
         if ip_input.lower() == "exit":
